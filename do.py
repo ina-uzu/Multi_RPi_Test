@@ -48,7 +48,7 @@ class AtlasI2C:
 				# change MSB to 0 for all received characters except the first and get a list of characters
 				# NOTE: having to change the MSB to 0 is a glitch in the raspberry pi, and you shouldn't have to do this!
 				char_list = list(map(lambda x: chr(ord(x) & ~0x80), list(response[1:])))
-				return "Command succeeded " + ''.join(char_list)     # convert the char list to a string and returns it
+				return ''.join(char_list)     # convert the char list to a string and returns it
 			else:
 				return "Error " + str(ord(response[0]))
 				
@@ -57,7 +57,7 @@ class AtlasI2C:
 				# change MSB to 0 for all received characters except the first and get a list of characters
 				# NOTE: having to change the MSB to 0 is a glitch in the raspberry pi, and you shouldn't have to do this!
 				char_list = list(map(lambda x: chr(x & ~0x80), list(res[1:])))
-				return "Command succeeded " + ''.join(char_list)     # convert the char list to a string and returns it
+				return ''.join(char_list)    # convert the char list to a string and returns it
 			else:
 				return "Error " + str(res[0])
 
@@ -93,67 +93,4 @@ class AtlasI2C:
 		self.set_i2c_address(prev_addr) # restore the address we were using
 		return i2c_devices
 
-		
-def main():
-	device = AtlasI2C() 	# creates the I2C port object, specify the address or bus if necessary
-
-	print(">> Atlas Scientific sample code")
-	print(">> Any commands entered are passed to the board via I2C except:")
-	print(">>   List_addr lists the available I2C addresses.")
-	print(">>   Address,xx changes the I2C address the Raspberry Pi communicates with.")
-	print(">>   Poll,xx.x command continuously polls the board every xx.x seconds")
-	print(" where xx.x is longer than the %0.2f second timeout." % AtlasI2C.long_timeout)
-	print(">> Pressing ctrl-c will stop the polling")
-	
-	real_raw_input = vars(__builtins__).get('raw_input', input)
-	
-	# main loop
-	while True:
-		user_cmd = real_raw_input("Enter command: ")
-
-		if user_cmd.upper().startswith("LIST_ADDR"):
-			devices = device.list_i2c_devices()
-			for i in range(len (devices)):
-				print( devices[i])
-
-		# address command lets you change which address the Raspberry Pi will poll
-		elif user_cmd.upper().startswith("ADDRESS"):
-			addr = int(user_cmd.split(',')[1])
-			device.set_i2c_address(addr)
-			print("I2C address set to " + str(addr))
-
-		# continuous polling command automatically polls the board
-		elif user_cmd.upper().startswith("POLL"):
-			delaytime = float(string.split(user_cmd, ',')[1])
-
-			# check for polling time being too short, change it to the minimum timeout if too short
-			if delaytime < AtlasI2C.long_timeout:
-				print("Polling time is shorter than timeout, setting polling time to %0.2f" % AtlasI2C.long_timeout)
-				delaytime = AtlasI2C.long_timeout
-
-			# get the information of the board you're polling
-			info = string.split(device.query("I"), ",")[1]
-			print("Polling %s sensor every %0.2f seconds, press ctrl-c to stop polling" % (info, delaytime))
-
-			try:
-				while True:
-					print(device.query("R"))
-					time.sleep(delaytime - AtlasI2C.long_timeout)
-			except KeyboardInterrupt: 		# catches the ctrl-c command, which breaks the loop above
-				print("Continuous polling stopped")
-
-		# if not a special keyword, pass commands straight to board
-		else:
-			if len(user_cmd) == 0:
-				print( "Please input valid command.")
-			else:
-				try:
-					print(device.query(user_cmd))
-				
-                                except IOError as e:
-					print("Query failed \n - Address may be invalid, use List_addr command to see available addresses")
-
-
-if __name__ == '__main__':
-	main()
 

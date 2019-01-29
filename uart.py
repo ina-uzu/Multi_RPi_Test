@@ -69,7 +69,7 @@ if __name__ == "__main__":
 	# to get a list of ports use the command: 
 	# python -m serial.tools.list_ports
 	# in the terminal
-	usbport = '/dev/ttyAMA0' # change to match your pi's setup 
+	usbport = '/dev/serial0' # change to match your pi's setup 
 
 	print( "Opening serial port now...")
 
