@@ -21,6 +21,7 @@ class BRIX :
 
     def readData(self):
         self.ser.write(READ_CMD_STR) 
+        res = []
         data=[]
         time.sleep(1) 
         for i in range(DATA_LENGTH):
@@ -36,12 +37,12 @@ class BRIX :
         for i in range(3):
             temp = temp << 4
             temp = data[i+4]
-        print("Brix- Temp is %f" % temp)
+
+        res.append(float(temp))
 
         temp = data[7]
         for i in range(3):
             temp = temp << 4
             temp = data[i+8]
-        print("Brix- Brix is %f" % temp)
-
+        res.append(float(temp))
 

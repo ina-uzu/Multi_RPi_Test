@@ -4,6 +4,7 @@ import io         # used to create file streams
 from io import open
 import fcntl      # used to access I2C parameters like addresses
 
+from datetime import datetime
 import time       # used for sleep delay and timestamps
 import string     # helps parse strings
 import serial
@@ -13,15 +14,32 @@ from dco2 import DCO2
 from do import AtlasI2C
 from brix import BRIX
 
+from kafka import KafkaProducer
+import simplejson as json
+
+
+DEVICE_ID = 1
+TOPIC_NAME = 'hello-kafka'
 device = AtlasI2C() 	# creates the I2C port object, specify the address or bus if necessary
 device_dco2 = DCO2()
 device_brix = BRIX()
 
 
 def readAll():
-    print("DO " + device.query("R") + " ppm")
-    device_dco2.send_read_cmd()
-    device_brix.readData()
+    do_val = device.query("R")
+    dco2_val = device_dco2.send_read_cmd() 
+    brix_val =[1,2]
+    #brix_val = device_brix.readData()
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    data = {'created_time' : timestamp , 'device_id' : DEVICE_ID, 'do' : do_val, 'dco2' : dco2_val, 'brix_temp' : brix_val[0], 'brix_brix': brix_val[1] }    
+   
+    sendAll(data)
+
+    print("DO " + do_val + " ppm")
+    print("DCO2 " + str(dco2_val) + " ppm")
+    print("Brix-Temp "+ str(brix_val[0]))
+    print("Brix-Brix " + str(brix_val[1]) + " %Brix") 
     print("")
 
 def calAll():
@@ -30,6 +48,33 @@ def calAll():
     #device_brix.readData()
     print("")
 
+def publish_message(producer, data):
+    
+    try:
+        producer.send(TOPIC_NAME, json.dumps(data).encode('utf-8'))
+        producer.flush()
+        print('Message published!')
+
+    except Exception as e:
+        print('Exception in publishing message')
+        print(e)
+
+def connect_kafka_producer():
+    _producer = None
+    try :
+        _producer = KafkaProducer(bootstrap_servers= ['localhost:9092'], api_version = (0,10))
+    except Exception as e :
+        print('Exception while connecting kafka')
+        print(e)
+    return _producer 
+
+
+def sendAll(data):
+    kafka_producer = connect_kafka_producer()
+
+    publish_message(kafka_producer, data)
+    if kafka_producer is not None:
+        kafka_producer.close()
 
 def main():
     	real_raw_input = vars(__builtins__).get('raw_input', input)

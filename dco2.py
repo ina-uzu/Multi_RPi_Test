@@ -58,7 +58,6 @@ class DCO2:
 					
 	res = data[1] << 8
 	res += data[2] 
-						
-	#write the data 
-	print("DCO2 %d ppm" % res)
+    
+        return res
 	
