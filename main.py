@@ -5,6 +5,8 @@ from io import open
 import fcntl      # used to access I2C parameters like addresses
 
 from datetime import datetime
+from pytz import timezone
+
 import time       # used for sleep delay and timestamps
 import string     # helps parse strings
 import serial
@@ -19,7 +21,9 @@ import simplejson as json
 
 
 DEVICE_ID = 1
+SERVER_ADR = 'localhost:9092'
 TOPIC_NAME = 'hello-kafka'
+
 device = AtlasI2C() 	# creates the I2C port object, specify the address or bus if necessary
 device_dco2 = DCO2()
 device_brix = BRIX()
@@ -28,10 +32,13 @@ device_brix = BRIX()
 def readAll():
     do_val = device.query("R")
     dco2_val = device_dco2.send_read_cmd() 
-    brix_val =[1,2]
+    brix_val =[10.0,10.0]
     #brix_val = device_brix.readData()
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+   
+    #timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.now(timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
 
+    
     data = {'created_time' : timestamp , 'device_id' : DEVICE_ID, 'do' : do_val, 'dco2' : dco2_val, 'brix_temp' : brix_val[0], 'brix_brix': brix_val[1] }    
    
     sendAll(data)
@@ -53,7 +60,6 @@ def publish_message(producer, data):
     try:
         producer.send(TOPIC_NAME, json.dumps(data).encode('utf-8'))
         producer.flush()
-        print('Message published!')
 
     except Exception as e:
         print('Exception in publishing message')
@@ -62,7 +68,7 @@ def publish_message(producer, data):
 def connect_kafka_producer():
     _producer = None
     try :
-        _producer = KafkaProducer(bootstrap_servers= ['localhost:9092'], api_version = (0,10))
+        _producer = KafkaProducer(bootstrap_servers= [SERVER_ADR], api_version = (0,10))
     except Exception as e :
         print('Exception while connecting kafka')
         print(e)
