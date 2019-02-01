@@ -48,12 +48,12 @@ def read_all_data():
     # Send json format data to server
     timestamp = datetime.now(timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
     data = {'created_time' : timestamp , 'device_id' : DEVICE_ID, 'do' : do_val, 'ph' : ph_val, 'dco2' : dco2_val, 'brix_temp' : brix_val[0], 'brix_brix': brix_val[1] }    
-    #send_all_data(data)
+    send_all_data(data)
     
 	# Print the data
     print("DO " + do_val + " ppm")
     print("pH " + ph_val + " ppm")
-    print("DCO2 " + str(dco2_val) + " ppm")
+    print("DCO2 " + dco2_val + " ppm")
     print("Brix-Temp "+ str(brix_val[0]))
     print("Brix-Brix " + str(brix_val[1]) + " %Brix") 
     print("")
