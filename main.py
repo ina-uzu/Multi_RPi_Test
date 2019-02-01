@@ -34,15 +34,15 @@ device_dco2 = DCO2()	# For DCO2
 device_brix = BRIX()	# For Brix 
 
 # Reading cycle time limit 
-MINIMUM_DELAY = 1.8
+MINIMUM_DELAY = 3.0
 
 def read_all_data():
     # Get all sensor's data
     do_val = device_do.query("R")
     ph_val = device_ph.query("R")
-    dco2_val = 123.0 
+    #dco2_val = 123.0 
     brix_val =[10.0,10.0]
-    #dco2_val = device_dco2.send_read_cmd() 
+    dco2_val = device_dco2.send_read_cmd() 
     #brix_val = device_brix.readData()
     
     # Send json format data to server
@@ -93,7 +93,14 @@ def main():
 
 	init_setting()
 	real_raw_input = vars(__builtins__).get('raw_input', input)
-	
+        
+        print("Welcome!")
+        print("1. Read ")
+        print("2. Cont_read , n")
+        print("3. Cal")
+        print("4. Quit")
+        print("")
+
 	# main loop
 	while True:
 		user_cmd = real_raw_input("Enter command: ")
@@ -128,7 +135,7 @@ def main():
 			try:
 				while True:
 					read_all_data()
-					time.sleep(delaytime - MINIMUM_DELAY)
+					time.sleep(delaytime-MINIMUM_DELAY)
 			except KeyboardInterrupt: 		
 				# Catch the ctrl-c command, which stops reading
 				print("Continuous polling stopped")

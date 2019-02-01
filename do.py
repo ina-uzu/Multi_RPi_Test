@@ -64,14 +64,14 @@ class AtlasI2C:
 	def query(self, string):
 		# write a command to the board, wait the correct timeout, and read the response
 		self.write(string)
-
+        	if string.upper().startswith("SLEEP"):
+			return "sleep mode"
+		
 		# the read a nd calibration commands require a longer timeout
-		if((string.upper().startswith("R")) or
+                if((string.upper().startswith("R")) or
 			(string.upper().startswith("CAL"))):
 			time.sleep(self.long_timeout)
-		elif string.upper().startswith("SLEEP"):
-			return "sleep mode"
-		else:
+	        else:
 			time.sleep(self.short_timeout)
 
 		return self.read()
