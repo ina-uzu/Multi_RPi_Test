@@ -123,8 +123,8 @@ def main():
 				print("Calibration failed")
 				print(e)
 
-		elif user_cmd.upper().startswith("CONT_READ")  or user_cmd=="2":
-			delaytime = float(string.split(user_cmd, ',')[1])
+		elif user_cmd.upper().startswith("CONT_READ") or user_cmd.startswith("2"):
+                        delaytime = float(user_cmd.split(',')[1])
 
 			# Check for polling time being too short
 			# Change it to the minimum delay time if too short
