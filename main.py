@@ -46,7 +46,9 @@ def read_all_data():
     #brix_val = device_brix.readData()
     
     # Send json format data to server
-    timestamp = datetime.now(timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
+    timestamp =str(time.time()).split('.')[0] 
+    #datetime.now(timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
+
     data = {'created_time' : timestamp , 'device_id' : DEVICE_ID, 'do' : do_val, 'ph' : ph_val, 'dco2' : dco2_val, 'brix_temp' : brix_val[0], 'brix_brix': brix_val[1] }    
     send_all_data(data)
     
@@ -104,24 +106,24 @@ def main():
 	# main loop
 	while True:
 		user_cmd = real_raw_input("Enter command: ")
-		if user_cmd.upper() =="QUIT" :
+		if user_cmd.upper() =="QUIT"  or user_cmd=="4":
 			break
                         
-		elif user_cmd.upper() =="READ":
+		elif user_cmd.upper() =="READ" or user_cmd=="1":
 			try:
 				read_all_data()
 			except IOError as e:
 				print("Read failed")
 				print(e)
 			
-		elif user_cmd.upper() =="CAL":
+                elif user_cmd.upper() =="CAL" or user_cmd=="3":
 			try:
 				calibration_all()
 			except IOError as e:
 				print("Calibration failed")
 				print(e)
 
-		elif user_cmd.upper().startswith("CONT_READ"):
+		elif user_cmd.upper().startswith("CONT_READ")  or user_cmd=="2":
 			delaytime = float(string.split(user_cmd, ',')[1])
 
 			# Check for polling time being too short
