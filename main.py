@@ -40,16 +40,19 @@ def read_all_data():
     # Get all sensor's data
     do_val = device_do.query("R")
     ph_val = device_ph.query("R")
+
     #dco2_val = 123.0 
+    #brix_val = device_brix.readData()
+
     brix_val =[10.0,10.0]
     dco2_val = device_dco2.send_read_cmd() 
-    #brix_val = device_brix.readData()
-    
+    sg_val = calculate_sg(brix_val)
+
     # Send json format data to server
     timestamp =str(time.time()).split('.')[0] 
     #datetime.now(timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
 
-    data = {'created_time' : timestamp , 'device_id' : DEVICE_ID, 'do' : do_val, 'ph' : ph_val, 'dco2' : dco2_val, 'brix_temp' : brix_val[0], 'brix_brix': brix_val[1] }    
+    data = {'created_time' : timestamp , 'device_id' : DEVICE_ID, 'do' : do_val, 'ph' : ph_val, 'dco2' : dco2_val, 'brix_temp' : brix_val[0], 'brix_brix': brix_val[1] , 'sg' : sg_val}    
     send_all_data(data)
     
 	# Print the data
@@ -58,6 +61,7 @@ def read_all_data():
     print("DCO2 " + dco2_val + " ppm")
     print("Brix-Temp "+ str(brix_val[0]))
     print("Brix-Brix " + str(brix_val[1]) + " %Brix") 
+    print("SG " + sg_val + " g/cm3")
     print("")
 
 # Perform remote calibration 
@@ -66,6 +70,9 @@ def calibration_all():
     print("DO done" + device_do.query("Cal,0"))
     device_dco2.send_cal_cmd()
     print("")
+
+def calculate_sg(brix):
+    return (brix / (258.6-((brix / 258.2)*227.1))) + 1
 
 def connect_kafka_producer():
     _producer = None
@@ -96,12 +103,12 @@ def main():
 	init_setting()
 	real_raw_input = vars(__builtins__).get('raw_input', input)
         
-        print("Welcome!")
-        print("1. Read ")
-        print("2. Cont_read , n")
-        print("3. Cal")
-        print("4. Quit")
-        print("")
+    print("Welcome!")
+    print("1. Read ")
+    print("2. Cont_read , n")
+    print("3. Cal")
+    print("4. Quit")
+    print("")
 
 	# main loop
 	while True:
