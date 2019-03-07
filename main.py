@@ -37,101 +37,110 @@ device_brix = BRIX()	# For Brix
 MINIMUM_DELAY = 3.0
 
 def read_all_data():
-    # Get all sensor's data
-    do_val = device_do.query("R")
-    ph_val = device_ph.query("R")
+# Get all sensor's data
+	do_val = device_do.query("R")
+	ph_val = device_ph.query("R")
+	dco2_val = device_dco2.send_read_cmd() 
+	brix_val = device_brix.readData()
+	
+	#brix_val = ['22','1.05']
+	sg_val = '%.2f' % calculate_sg(float(brix_val[1]))
 
-    #dco2_val = 123.0 
-    #brix_val = device_brix.readData()
+	# Send json format data to server
+	timestamp =str(time.time()).split('.')[0] 
+	data = {'created_time' : timestamp , 'device_id' : DEVICE_ID, 'do' : do_val, 'ph' : ph_val, 'dco2' : dco2_val, 'brix_temp' : brix_val[0], 'brix_brix': brix_val[1]}    
+	
+	#send_all_data(data)
 
-    brix_val =[10.0,10.0]
-    dco2_val = device_dco2.send_read_cmd() 
-    sg_val = calculate_sg(brix_val)
-
-    # Send json format data to server
-    timestamp =str(time.time()).split('.')[0] 
-    #datetime.now(timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
-
-    data = {'created_time' : timestamp , 'device_id' : DEVICE_ID, 'do' : do_val, 'ph' : ph_val, 'dco2' : dco2_val, 'brix_temp' : brix_val[0], 'brix_brix': brix_val[1] , 'sg' : sg_val}    
-    send_all_data(data)
-    
 	# Print the data
-    print("DO " + do_val + " ppm")
-    print("pH " + ph_val + " ppm")
-    print("DCO2 " + dco2_val + " ppm")
-    print("Brix-Temp "+ str(brix_val[0]))
-    print("Brix-Brix " + str(brix_val[1]) + " %Brix") 
-    print("SG " + sg_val + " g/cm3")
-    print("")
+	print("DO " + do_val + " ppm")
+	print("pH " + ph_val + " ppm")
+	print("DCO2 " + dco2_val + " ppm")
+	
+	if brix_val[1] < 0 :
+		print("Failed to read Brix data")
+	
+	else:
+		print("Brix-Temp "+ str(brix_val[0]))
+		print("Brix-Brix " + str(brix_val[1]) + " Brix") 
+	print("SG " + sg_val + " g/cm3")
+	print("")
 
 # Perform remote calibration 
 def calibration_all():
-    # IT MUST BE CHANGED!!!!!!!!!!!!!!!!!!!!
-    print("DO done" + device_do.query("Cal,0"))
-    device_dco2.send_cal_cmd()
-    print("")
+	# IT MUST BE CHANGED!!!!!!!!!!!!!!!!!!!!
+	print("DO done" + device_do.query("Cal,0"))
+	device_dco2.send_cal_cmd()
+	print("")
 
 def calculate_sg(brix):
-    return (brix / (258.6-((brix / 258.2)*227.1))) + 1
+	return (brix / (258.6-((brix / 258.2)*227.1))) + 1
 
 def connect_kafka_producer():
-    _producer = None
-    try :
-        _producer = KafkaProducer(bootstrap_servers= [SERVER_ADR], api_version = (0,10))
-    except Exception as e :
-        print('Exception while connecting kafka')
-        print(e)
-    return _producer 
+	_producer = None
+	try :
+		_producer = KafkaProducer(bootstrap_servers= [SERVER_ADR], api_version = (0,10))
+	except Exception as e :
+		print('Exception while connecting kafka')
+		print(e)
+	return _producer 
 
 def send_all_data(data):
-    kafka_producer = connect_kafka_producer()
-    try:
-        kafka_producer.send(TOPIC_NAME, json.dumps(data).encode('utf-8'))
-        kafka_producer.flush()
-    except Exception as e:
-        print('Exception in publishing message')
-        print(e)
-    if kafka_producer is not None:
-        kafka_producer.close()
+	kafka_producer = connect_kafka_producer()
+	try:
+		kafka_producer.send(TOPIC_NAME, json.dumps(data).encode('utf-8'))
+		kafka_producer.flush()
+	except Exception as e:
+		print('Exception in publishing message')
+		print(e)
+	
+	if kafka_producer is not None:
+		kafka_producer.close()
 
 def init_setting() :
-    device_do.set_i2c_address(DO_ADDR)
-    device_ph.set_i2c_address(PH_ADDR)
+	#Set I2C addresses
+	device_do.set_i2c_address(DO_ADDR)
+	device_ph.set_i2c_address(PH_ADDR)
 
 def main():
 
 	init_setting()
 	real_raw_input = vars(__builtins__).get('raw_input', input)
-        
-    print("Welcome!")
-    print("1. Read ")
-    print("2. Cont_read , n")
-    print("3. Cal")
-    print("4. Quit")
-    print("")
+
+	print("Welcome!")
+	print("1. Read ")
+	print("2. Cont_read , n")
+	print("3. Cal")
+	print("4. Quit")
+	print("")
 
 	# main loop
 	while True:
 		user_cmd = real_raw_input("Enter command: ")
+		
+		# QUIT
 		if user_cmd.upper() =="QUIT"  or user_cmd=="4":
 			break
-                        
+
+		# 1 READING
 		elif user_cmd.upper() =="READ" or user_cmd=="1":
 			try:
 				read_all_data()
 			except IOError as e:
 				print("Read failed")
 				print(e)
-			
-                elif user_cmd.upper() =="CAL" or user_cmd=="3":
+
+		# Calibration 
+		elif user_cmd.upper() =="CAL" or user_cmd=="3":
 			try:
 				calibration_all()
 			except IOError as e:
 				print("Calibration failed")
 				print(e)
 
+		# Continuous Reading
 		elif user_cmd.upper().startswith("CONT_READ") or user_cmd.startswith("2"):
-                        delaytime = float(user_cmd.split(',')[1])
+			delaytime = float(user_cmd.split(',')[1])
 
 			# Check for polling time being too short
 			# Change it to the minimum delay time if too short
@@ -148,9 +157,11 @@ def main():
 			except KeyboardInterrupt: 		
 				# Catch the ctrl-c command, which stops reading
 				print("Continuous polling stopped")
+
+		#Invalid input
 		else:
 			print( "Please input valid command.")
-			
+
 if __name__ == '__main__':
 	main()
 
